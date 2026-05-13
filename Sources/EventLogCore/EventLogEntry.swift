@@ -1,14 +1,14 @@
 import Foundation
 
 public enum EventSeverity: String, CaseIterable, Codable, Hashable {
-    case critical = "Critical"
-    case error = "Error"
-    case warning = "Warning"
-    case information = "Information"
-    case auditSuccess = "Audit Success"
-    case auditFailure = "Audit Failure"
-    case verbose = "Verbose"
-    case unknown = "Unknown"
+    case critical = "🚨 Critical"
+    case error = "❌ Error"
+    case warning = "⚠️ Warning"
+    case information = "ℹ️ Information"
+    case auditSuccess = "✅ Audit Success"
+    case auditFailure = "🚫 Audit Failure"
+    case verbose = "💬 Verbose"
+    case unknown = "❓ Unknown"
 }
 
 public struct EventLogEntry: Identifiable, Codable, Hashable {

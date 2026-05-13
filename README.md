@@ -55,13 +55,59 @@ To create a release app bundle:
 ./script/build_and_run.sh --package
 ```
 
-To create a signed local DMG installer:
+To create a DMG installer:
 
 ```sh
 ./script/create_dmg.sh
 ```
 
-The DMG script builds the release app, applies local ad-hoc signing, stages the app with an Applications shortcut, writes Finder layout metadata, and verifies the final disk image.
+The DMG script builds the release app, stages the app with an Applications shortcut, writes Finder layout metadata, and verifies the final disk image.
+
+### macOS Gatekeeper Notice
+
+This app is **ad-hoc signed** (not signed with a paid Apple Developer ID). When you download the DMG from GitHub, macOS may show a security warning. This is normal for open-source apps distributed outside the App Store.
+
+**To open the app:**
+
+1. Drag `WinEventLogViewer.app` to your **Applications** folder.
+2. **Right-click** the app icon and select **Open**.
+3. Click **Open** in the dialog that appears.
+
+Alternatively, run this in Terminal after installing:
+
+```sh
+xattr -cr /Applications/WinEventLogViewer.app
+```
+
+Then you can open it normally by double-clicking.
+
+### Signed & Notarized Release (Optional)
+
+If you have an Apple Developer Program membership ($99/year), you can sign and notarize the DMG to eliminate the Gatekeeper warning. The build scripts support this via environment variables.
+
+See [SIGNING.md](SIGNING.md) for the full setup guide.
+
+Quick local signed build:
+
+```sh
+export CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
+export NOTARIZATION_USERNAME="your@apple.id"
+export NOTARIZATION_PASSWORD="app-specific-password"
+./script/create_dmg.sh
+```
+
+#### Automated GitHub Releases
+
+A GitHub Actions workflow (`.github/workflows/release.yml`) is included. Pushing a tag starting with `v` triggers the workflow, which builds the DMG and uploads it to the release page.
+
+To create a release:
+
+```sh
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The workflow will automatically publish the DMG to the GitHub release.
 
 ## Project Structure
 
@@ -96,3 +142,7 @@ The parser tests cover Windows Event XML field extraction, Windows FILETIME conv
 ## Notes
 
 EVTX is a complex binary format. This app focuses on practical local inspection and keeps extracted raw text or parser notes visible when an event cannot be fully decoded.
+
+---
+
+[繁體中文版本](README.zh-Hant.md)

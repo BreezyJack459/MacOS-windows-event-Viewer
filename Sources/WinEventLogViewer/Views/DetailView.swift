@@ -12,10 +12,10 @@ struct DetailView: View {
                     VStack(alignment: .leading, spacing: 18) {
                         EventHeader(entry: entry)
                         MetadataGrid(entry: entry)
-                        MessagePanel(title: "Message", text: entry.message)
+                        MessagePanel(title: "📝 Message", text: entry.message)
 
                         if !entry.rawText.isEmpty, entry.rawText != entry.message {
-                            MessagePanel(title: "Extracted Text", text: entry.rawText)
+                            MessagePanel(title: "📄 Extracted Text", text: entry.rawText)
                         }
 
                         if let document, !document.parserNotes.isEmpty {
@@ -90,12 +90,12 @@ private struct MetadataGrid: View {
 
     private var rows: [(String, String)] {
         [
-            ("Provider", entry.provider),
-            ("Event ID", entry.eventID),
-            ("Record ID", entry.recordID.map(String.init)),
-            ("Channel", entry.channel),
-            ("Computer", entry.computer),
-            ("Source Offset", entry.sourceOffset.map { "0x" + String($0, radix: 16, uppercase: true) })
+            ("🏢 Provider", entry.provider),
+            ("🆔 Event ID", entry.eventID),
+            ("#️⃣ Record ID", entry.recordID.map(String.init)),
+            ("📡 Channel", entry.channel),
+            ("💻 Computer", entry.computer),
+            ("📍 Source Offset", entry.sourceOffset.map { "0x" + String($0, radix: 16, uppercase: true) })
         ].compactMap { label, value in
             guard let value, !value.isEmpty else { return nil }
             return (label, value)
@@ -126,7 +126,7 @@ private struct NotesPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Parser Notes")
+            Text("🔧 Parser Notes")
                 .font(.headline)
             ForEach(notes, id: \.self) { note in
                 Text(note)
@@ -147,9 +147,9 @@ private struct EmptyStateView: View {
             Image(systemName: hasDocument ? "line.3.horizontal.decrease.circle" : "doc.text.magnifyingglass")
                 .font(.system(size: 48))
                 .foregroundStyle(.secondary)
-            Text(hasDocument ? "No matching events" : "Open a Windows event log")
+            Text(hasDocument ? "🔍 No matching events" : "📂 Open a Windows event log")
                 .font(.title3)
-            Text(hasDocument ? "Adjust the search or severity filter." : "Use File > Open Event Log... or the toolbar button.")
+            Text(hasDocument ? "Try adjusting the search or severity filter." : "Use File > Open Event Log... or the toolbar button.")
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

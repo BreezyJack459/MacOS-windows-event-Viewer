@@ -1,3 +1,5 @@
 .DS_Store
 .build/
 dist/
+.playwright-mcp/
+.swiftpm/xcode/xcuserdata/

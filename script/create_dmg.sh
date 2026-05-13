@@ -6,6 +6,10 @@ DISPLAY_NAME="Windows Event Log Viewer"
 DMG_NAME="WindowsEventLogViewer.dmg"
 VOLUME_SIZE="${VOLUME_SIZE:-160m}"
 BACKGROUND_DIR_NAME="background"
+CODESIGN_IDENTITY="${CODESIGN_IDENTITY:-}"
+NOTARIZATION_USERNAME="${NOTARIZATION_USERNAME:-}"
+NOTARIZATION_PASSWORD="${NOTARIZATION_PASSWORD:-}"
+NOTARIZATION_TEAM_ID="${NOTARIZATION_TEAM_ID:-}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_DIR="$ROOT_DIR/dist"
@@ -74,10 +78,8 @@ PY
 log "Building release app bundle"
 "$ROOT_DIR/script/build_and_run.sh" --package
 
-log "Signing app bundle"
-xattr -cr "$APP_BUNDLE" || true
-codesign --force --deep --sign - "$APP_BUNDLE" >/dev/null
-codesign --verify --deep --strict "$APP_BUNDLE"
+# Skip signing the original bundle here; we sign inside the mounted DMG
+# to avoid HFS+ FinderInfo issues that codesign rejects.
 
 detach_mount "$MOUNT_DIR"
 detach_mount "$VERIFY_MOUNT_DIR"
@@ -92,8 +94,10 @@ log "Staging DMG contents"
 ditto --noextattr --noqtn "$APP_BUNDLE" "$STAGING_DIR/$APP_NAME.app"
 cp "$BACKGROUND_FILE" "$STAGING_DIR/$BACKGROUND_DIR_NAME/DMGBackground.png"
 ln -s /Applications "$STAGING_DIR/Applications"
-xattr -cr "$STAGING_DIR/$APP_NAME.app" || true
 plutil -lint "$STAGING_DIR/$APP_NAME.app/Contents/Info.plist" >/dev/null
+
+# Do NOT sign the staging copy. HFS+ volumes add FinderInfo during hdiutil create,
+# which causes codesign to reject the bundle. We sign inside the mounted DMG instead.
 test -x "$STAGING_DIR/$APP_NAME.app/Contents/MacOS/$APP_NAME"
 
 log "Creating read-write image"
@@ -123,8 +127,29 @@ if command -v SetFile >/dev/null 2>&1; then
   SetFile -a V "$MOUNT_DIR/$BACKGROUND_DIR_NAME" || true
 fi
 
+log "Signing mounted app bundle"
+# HFS+ adds FinderInfo to directories; codesign rejects it.
+xattr -d com.apple.FinderInfo "$MOUNT_DIR/$APP_NAME.app" >/dev/null 2>&1 || true
+
+ENTITLEMENTS_FILE="$ROOT_DIR/Resources/$APP_NAME.entitlements"
+if [[ -n "$CODESIGN_IDENTITY" ]]; then
+  if [[ -f "$ENTITLEMENTS_FILE" ]]; then
+    codesign --force --deep --sign "$CODESIGN_IDENTITY" \
+      --entitlements "$ENTITLEMENTS_FILE" \
+      --options runtime \
+      --timestamp \
+      "$MOUNT_DIR/$APP_NAME.app"
+  else
+    codesign --force --deep --sign "$CODESIGN_IDENTITY" \
+      --options runtime \
+      --timestamp \
+      "$MOUNT_DIR/$APP_NAME.app"
+  fi
+else
+  codesign --force --deep --sign - "$MOUNT_DIR/$APP_NAME.app" >/dev/null
+fi
+
 log "Verifying mounted image contents"
-xattr -cr "$MOUNT_DIR/$APP_NAME.app" || true
 test -d "$MOUNT_DIR/$APP_NAME.app"
 test -L "$MOUNT_DIR/Applications"
 test -f "$MOUNT_DIR/.DS_Store"
@@ -154,6 +179,13 @@ hdiutil convert "$TMP_DMG" \
   -format UDZO \
   -imagekey zlib-level=9 \
   -o "$FINAL_DMG" >/dev/null
+
+log "Signing DMG"
+if [[ -n "$CODESIGN_IDENTITY" ]]; then
+  codesign --force --sign "$CODESIGN_IDENTITY" --timestamp "$FINAL_DMG"
+else
+  codesign --force --sign - "$FINAL_DMG" >/dev/null 2>&1 || true
+fi
 
 log "Verifying final DMG can load"
 hdiutil verify "$FINAL_DMG" >/dev/null
@@ -186,5 +218,22 @@ detach_mount "$VERIFY_MOUNT_DIR"
 trap - EXIT
 
 rm -rf "$STAGING_DIR" "$MOUNT_DIR" "$VERIFY_MOUNT_DIR" "$TMP_DMG"
+
+# Notarize and staple the DMG if credentials are available
+if [[ -n "$CODESIGN_IDENTITY" && -n "$NOTARIZATION_PASSWORD" ]]; then
+  log "Submitting DMG for notarization"
+  NOTARY_ARGS=(
+    --apple-id "$NOTARIZATION_USERNAME"
+    --password "$NOTARIZATION_PASSWORD"
+    --wait
+  )
+  if [[ -n "$NOTARIZATION_TEAM_ID" ]]; then
+    NOTARY_ARGS+=(--team-id "$NOTARIZATION_TEAM_ID")
+  fi
+  xcrun notarytool submit "$FINAL_DMG" "${NOTARY_ARGS[@]}"
+
+  log "Stapling notarization ticket"
+  xcrun stapler staple "$FINAL_DMG"
+fi
 
 echo "$FINAL_DMG"

@@ -7,13 +7,13 @@ struct WinEventLogViewerApp: App {
     @StateObject private var store = EventLogStore()
 
     var body: some Scene {
-        WindowGroup("Windows Event Log Viewer") {
+        WindowGroup("🪟 Windows Event Log Viewer") {
             ContentView(store: store)
                 .frame(minWidth: 980, minHeight: 640)
         }
         .commands {
             CommandGroup(after: .newItem) {
-                Button("Open Event Log...") {
+                Button("📂 Open Event Log...") {
                     store.showImporter = true
                 }
                 .keyboardShortcut("o", modifiers: [.command])

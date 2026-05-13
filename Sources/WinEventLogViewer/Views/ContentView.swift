@@ -17,7 +17,7 @@ struct ContentView: View {
                 Button {
                     store.showImporter = true
                 } label: {
-                    Label("Open", systemImage: "folder")
+                    Label("📂 Open", systemImage: "folder")
                 }
 
                 if store.isLoading {
@@ -26,7 +26,7 @@ struct ContentView: View {
                 }
             }
         }
-        .searchable(text: $store.query, placement: .toolbar, prompt: "Search events")
+        .searchable(text: $store.query, placement: .toolbar, prompt: "🔍 Search events")
         .fileImporter(
             isPresented: $store.showImporter,
             allowedContentTypes: [.item],
@@ -36,7 +36,7 @@ struct ContentView: View {
                 store.load(url: url)
             }
         }
-        .alert("Could not load event log", isPresented: Binding(
+        .alert("⚠️ Could not load event log", isPresented: Binding(
             get: { store.errorMessage != nil },
             set: { if !$0 { store.errorMessage = nil } }
         )) {

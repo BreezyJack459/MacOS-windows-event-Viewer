@@ -8,8 +8,8 @@ struct SidebarView: View {
         VStack(spacing: 0) {
             header
 
-            Picker("Severity", selection: severityBinding) {
-                Text("All").tag(Optional<EventSeverity>.none)
+            Picker("🔎 Severity", selection: severityBinding) {
+                Text("📋 All").tag(Optional<EventSeverity>.none)
                 ForEach(EventSeverity.allCases, id: \.self) { severity in
                     Text(severity.rawValue).tag(Optional(severity))
                 }
@@ -27,7 +27,7 @@ struct SidebarView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(store.document?.sourceName ?? "No Event Log Open")
+            Text(store.document?.sourceName ?? "📭 No Event Log Open")
                 .font(.headline)
                 .lineLimit(1)
 
@@ -42,12 +42,12 @@ struct SidebarView: View {
 
     private var subtitle: String {
         guard let document = store.document else {
-            return "Open a .evtx or Windows Event XML export."
+            return "Open a .evtx or Windows Event XML export 📄"
         }
 
         let visible = store.filteredEntries.count
         let total = document.entries.count
-        return visible == total ? "\(total) events" : "\(visible) of \(total) events"
+        return visible == total ? "📊 \(total) events" : "📊 \(visible) of \(total) events"
     }
 
     private var severityBinding: Binding<EventSeverity?> {

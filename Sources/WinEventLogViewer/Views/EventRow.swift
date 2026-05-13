@@ -6,9 +6,9 @@ struct EventRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: iconName)
-                .foregroundStyle(tint)
-                .frame(width: 16)
+            Text(levelEmoji)
+                .font(.system(size: 14))
+                .frame(width: 20, alignment: .center)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -39,6 +39,19 @@ struct EventRow: View {
         ]
         .compactMap { $0 }
         .joined(separator: " · ")
+    }
+
+    private var levelEmoji: String {
+        switch entry.level {
+        case .critical: return "🚨"
+        case .error: return "❌"
+        case .warning: return "⚠️"
+        case .information: return "ℹ️"
+        case .auditSuccess: return "✅"
+        case .auditFailure: return "🚫"
+        case .verbose: return "💬"
+        case .unknown: return "❓"
+        }
     }
 
     private var iconName: String {
