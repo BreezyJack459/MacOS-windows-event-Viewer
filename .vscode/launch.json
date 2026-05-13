@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:MacOS windows event Viewer}",
+            "name": "Debug WinEventLogViewer",
+            "target": "WinEventLogViewer",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug WinEventLogViewer"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:MacOS windows event Viewer}",
+            "name": "Release WinEventLogViewer",
+            "target": "WinEventLogViewer",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release WinEventLogViewer"
+        }
+    ]
+}
