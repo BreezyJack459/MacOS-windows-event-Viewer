@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
   contents: write
@@ -57,13 +57,13 @@ jobs:
             Download `WindowsEventLogViewer.dmg` below and drag `WinEventLogViewer.app` to your **Applications** folder.
 
             ### macOS Gatekeeper
-            This app is ad-hoc signed. On first launch, macOS may show a security warning. To open the app:
+            This app is not signed with an Apple Developer ID. On first launch, macOS will show a security warning. To open the app:
 
             1. **Right-click** `WinEventLogViewer.app` in Applications
             2. Select **Open**
             3. Click **Open** in the dialog
 
-            Or run in Terminal:
+            Alternatively, remove the quarantine flag in Terminal:
             ```bash
             xattr -cr /Applications/WinEventLogViewer.app
             ```

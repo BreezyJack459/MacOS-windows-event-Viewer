@@ -65,7 +65,7 @@ The DMG script builds the release app, stages the app with an Applications short
 
 ### macOS Gatekeeper Notice
 
-This app is **ad-hoc signed** (not signed with a paid Apple Developer ID). When you download the DMG from GitHub, macOS may show a security warning. This is normal for open-source apps distributed outside the App Store.
+This app is **not signed with an Apple Developer ID**. When you download the DMG from GitHub, macOS Gatekeeper will show a security warning. This is normal for open-source apps distributed outside the App Store.
 
 **To open the app:**
 
@@ -73,7 +73,7 @@ This app is **ad-hoc signed** (not signed with a paid Apple Developer ID). When 
 2. **Right-click** the app icon and select **Open**.
 3. Click **Open** in the dialog that appears.
 
-Alternatively, run this in Terminal after installing:
+Alternatively, remove the quarantine flag in Terminal after installing:
 
 ```sh
 xattr -cr /Applications/WinEventLogViewer.app

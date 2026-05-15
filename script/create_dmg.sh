@@ -96,8 +96,14 @@ cp "$BACKGROUND_FILE" "$STAGING_DIR/$BACKGROUND_DIR_NAME/DMGBackground.png"
 ln -s /Applications "$STAGING_DIR/Applications"
 plutil -lint "$STAGING_DIR/$APP_NAME.app/Contents/Info.plist" >/dev/null
 
-# Do NOT sign the staging copy. HFS+ volumes add FinderInfo during hdiutil create,
-# which causes codesign to reject the bundle. We sign inside the mounted DMG instead.
+# Remove any linker/ad-hoc signature from the binary so the release is fully unsigned.
+# Unsigned apps trigger a softer Gatekeeper warning ("unidentified developer")
+# that users can bypass with Right-click → Open. Ad-hoc signed downloaded apps
+# often show "App is damaged" which cannot be bypassed.
+if [[ -z "$CODESIGN_IDENTITY" ]]; then
+  codesign --remove-signature "$STAGING_DIR/$APP_NAME.app" 2>/dev/null || true
+fi
+
 test -x "$STAGING_DIR/$APP_NAME.app/Contents/MacOS/$APP_NAME"
 
 log "Creating read-write image"
@@ -127,12 +133,12 @@ if command -v SetFile >/dev/null 2>&1; then
   SetFile -a V "$MOUNT_DIR/$BACKGROUND_DIR_NAME" || true
 fi
 
-log "Signing mounted app bundle"
-# HFS+ adds FinderInfo to directories; codesign rejects it.
-xattr -d com.apple.FinderInfo "$MOUNT_DIR/$APP_NAME.app" >/dev/null 2>&1 || true
-
 ENTITLEMENTS_FILE="$ROOT_DIR/Resources/$APP_NAME.entitlements"
 if [[ -n "$CODESIGN_IDENTITY" ]]; then
+  log "Signing mounted app bundle"
+  # HFS+ adds FinderInfo to directories; codesign rejects it.
+  xattr -d com.apple.FinderInfo "$MOUNT_DIR/$APP_NAME.app" >/dev/null 2>&1 || true
+
   if [[ -f "$ENTITLEMENTS_FILE" ]]; then
     codesign --force --deep --sign "$CODESIGN_IDENTITY" \
       --entitlements "$ENTITLEMENTS_FILE" \
@@ -145,8 +151,6 @@ if [[ -n "$CODESIGN_IDENTITY" ]]; then
       --timestamp \
       "$MOUNT_DIR/$APP_NAME.app"
   fi
-else
-  codesign --force --deep --sign - "$MOUNT_DIR/$APP_NAME.app" >/dev/null
 fi
 
 log "Verifying mounted image contents"
@@ -169,7 +173,9 @@ then
 fi
 test -x "$MOUNT_DIR/$APP_NAME.app/Contents/MacOS/$APP_NAME"
 plutil -lint "$MOUNT_DIR/$APP_NAME.app/Contents/Info.plist" >/dev/null
-codesign --verify --deep --strict "$MOUNT_DIR/$APP_NAME.app"
+if [[ -n "$CODESIGN_IDENTITY" ]]; then
+  codesign --verify --deep --strict "$MOUNT_DIR/$APP_NAME.app"
+fi
 
 sync
 detach_mount "$MOUNT_DIR"
@@ -184,7 +190,7 @@ log "Signing DMG"
 if [[ -n "$CODESIGN_IDENTITY" ]]; then
   codesign --force --sign "$CODESIGN_IDENTITY" --timestamp "$FINAL_DMG"
 else
-  codesign --force --sign - "$FINAL_DMG" >/dev/null 2>&1 || true
+  : # skip ad-hoc DMG signing
 fi
 
 log "Verifying final DMG can load"
@@ -213,7 +219,9 @@ then
   exit 1
 fi
 test -x "$VERIFY_MOUNT_DIR/$APP_NAME.app/Contents/MacOS/$APP_NAME"
-codesign --verify --deep --strict "$VERIFY_MOUNT_DIR/$APP_NAME.app"
+if [[ -n "$CODESIGN_IDENTITY" ]]; then
+  codesign --verify --deep --strict "$VERIFY_MOUNT_DIR/$APP_NAME.app"
+fi
 detach_mount "$VERIFY_MOUNT_DIR"
 trap - EXIT
 
